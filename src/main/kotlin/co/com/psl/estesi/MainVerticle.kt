@@ -51,7 +51,13 @@ class MainVerticle : CoroutineVerticle() {
         if (ldapId == "error") {
           unauthorized(routingContext)
         } else {
-          authorized(routingContext)
+          val role = getRoleByLdapid(ldapId)
+
+          when (role) {
+            "admin" -> authorized(routingContext)
+            "lead" -> authorized(routingContext)
+            else -> unauthorized(routingContext)
+          }
         }
       }
 
@@ -104,6 +110,16 @@ class MainVerticle : CoroutineVerticle() {
 
   private fun authorized(routingContext: RoutingContext) {
     routingContext.next()
+  }
+
+  private fun getRoleByLdapid(ldapId: String): String? {
+    val result = when (ldapId) {
+      "lmejias" -> "admin"
+      "sespinala" -> "lead"
+      "dcastellanos" -> "nn"
+      else -> null
+    }
+    return result
   }
 }
 
