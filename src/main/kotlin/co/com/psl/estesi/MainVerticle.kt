@@ -38,31 +38,31 @@ class MainVerticle : CoroutineVerticle() {
     println("*** initializeRouter - Start ***")
     val router = Router.router(vertx)
 
-    router.route().coroutineHandler { routingContext ->
+    router.route("/*").coroutineHandler { routingContext ->
       var req = routingContext.request()
       var token = req.getHeader("Authorization")// Now end the response
       print(token)
       var ldapId = validateToken(token)
       print(ldapId)
-      routingContext.response().end()
+      routingContext.next()
     }
 
-    router.get("/anvorguesa1").handler { routingContext ->
+    router.get("/anvorguesa1").coroutineHandler { routingContext ->
       println("*** /anvorguesa1 - Start/End ***")
       routingContext.response().end("hello world")
     }
 
-    router.get("/anvorguesa2").handler { routingContext ->
+    router.get("/anvorguesa2").coroutineHandler { routingContext ->
       println("*** /anvorguesa2 - Start/End ***")
       routingContext.response().end("ola mundo")
     }
 
-    router.get("/anvorguesa3").handler { routingContext ->
+    router.get("/anvorguesa3").coroutineHandler { routingContext ->
       println("*** /anvorguesa3 - Start/End ***")
       routingContext.response().end("ola ke ase")
     }
 
-    router.get("/health").handler(this::health)
+    router.get("/health").coroutineHandler { health(it) }
 
     println("*** initializeRouter - End ***")
     return router
