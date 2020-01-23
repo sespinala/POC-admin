@@ -20,6 +20,7 @@ import kotlinx.coroutines.withTimeout
 class MainVerticle : CoroutineVerticle() {
 
   private lateinit var webClient: WebClient
+  private val leadEnpoints = setOf("/anvorguesa1")
 
   init {
   }
@@ -55,7 +56,7 @@ class MainVerticle : CoroutineVerticle() {
 
           when (role) {
             "admin" -> authorized(routingContext)
-            "lead" -> authorized(routingContext)
+            "lead" -> if (leadEnpoints.contains(routingContext.normalisedPath())) authorized(routingContext) else unauthorized(routingContext)
             else -> unauthorized(routingContext)
           }
         }
