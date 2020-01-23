@@ -41,17 +41,20 @@ class MainVerticle : CoroutineVerticle() {
     router.route().pathRegex("^(?!\\/anvorguesa3).*$").coroutineHandler { routingContext ->
       println("*** router.route - Start ***")
       val request = routingContext.request()
-      val token = request.getHeader("Authorization")// Now end the response
-      print("token $token")
+      val token: String? = request.getHeader("Authorization")
 
-      if (token == "orion") {
-        routingContext.next()
-      } else {
+      if (token == null || token.isBlank()) {
         unauthorized(routingContext)
+      } else {
+        val ldapId = validateToken(token)
+
+        if (ldapId == "error") {
+          unauthorized(routingContext)
+        } else {
+          authorized(routingContext)
+        }
       }
 
-      // var ldapId = validateToken(token)
-      // print(ldapId)
       println("*** router.route - End ***")
     }
 
@@ -81,7 +84,7 @@ class MainVerticle : CoroutineVerticle() {
     routingContext.response().setStatusCode(200).end("Healthy")
   }
 
-  private suspend fun validateToken(token: String): JsonObject? {
+  private suspend fun validateToken(token: String): String {
     println("*** validateToken - Start ***")
     val response = withTimeout(1000) {
       awaitResult<HttpResponse<Buffer>> {
@@ -92,11 +95,15 @@ class MainVerticle : CoroutineVerticle() {
     }
     val body = response.bodyAsJsonObject()
     println("*** validateToken - End ***")
-    return body
+    return body.getString("ldapId") ?: "error"
   }
 
   private fun unauthorized(routingContext: RoutingContext) {
     routingContext.response().setStatusCode(401).end("Unauthorized. You have no power here .l.")
+  }
+
+  private fun authorized(routingContext: RoutingContext) {
+    routingContext.next()
   }
 }
 
