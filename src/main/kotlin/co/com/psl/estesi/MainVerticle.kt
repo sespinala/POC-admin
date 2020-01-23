@@ -38,13 +38,21 @@ class MainVerticle : CoroutineVerticle() {
     println("*** initializeRouter - Start ***")
     val router = Router.router(vertx)
 
-    router.route("/*").coroutineHandler { routingContext ->
-      var req = routingContext.request()
-      var token = req.getHeader("Authorization")// Now end the response
-      print(token)
-      var ldapId = validateToken(token)
-      print(ldapId)
-      routingContext.next()
+    router.route().pathRegex("^(?!\\/anvorguesa3).*$").coroutineHandler { routingContext ->
+      println("*** router.route - Start ***")
+      val request = routingContext.request()
+      val token = request.getHeader("Authorization")// Now end the response
+      print("token $token")
+
+      if (token == "orion") {
+        routingContext.next()
+      } else {
+        unauthorized(routingContext)
+      }
+
+      // var ldapId = validateToken(token)
+      // print(ldapId)
+      println("*** router.route - End ***")
     }
 
     router.get("/anvorguesa1").coroutineHandler { routingContext ->
@@ -74,6 +82,7 @@ class MainVerticle : CoroutineVerticle() {
   }
 
   private suspend fun validateToken(token: String): JsonObject? {
+    println("*** validateToken - Start ***")
     val response = withTimeout(1000) {
       awaitResult<HttpResponse<Buffer>> {
         webClient.getAbs("http://hxj8jecbmjbj5h7mh-mock.stoplight-proxy.io/validateToken/$token")
@@ -82,7 +91,12 @@ class MainVerticle : CoroutineVerticle() {
       }
     }
     val body = response.bodyAsJsonObject()
+    println("*** validateToken - End ***")
     return body
+  }
+
+  private fun unauthorized(routingContext: RoutingContext) {
+    routingContext.response().setStatusCode(401).end("Unauthorized. You have no power here .l.")
   }
 }
 
@@ -91,6 +105,7 @@ private val TEXT_HTML = "text/html"
 private val UTF_8 = "utf-8"
 
 fun Route.coroutineHandler(function: suspend (RoutingContext)->Unit): Route = handler{ routingContext->
+  println("*** coroutineHandler - Start ***")
   GlobalScope.launch(routingContext.vertx().dispatcher()) {
     try{
       routingContext.response().putHeader(
@@ -102,4 +117,5 @@ fun Route.coroutineHandler(function: suspend (RoutingContext)->Unit): Route = ha
       routingContext.fail(e)
     }
   }
+  println("*** coroutineHandler - End ***")
 }
